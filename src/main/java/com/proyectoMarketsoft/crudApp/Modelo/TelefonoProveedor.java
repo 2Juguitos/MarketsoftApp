@@ -1,15 +1,12 @@
 package com.proyectoMarketsoft.crudApp.Modelo;
+
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NonNull;
 
-@Entity
+@Entity(name = "telefonos")
 @Table(name = "tbl_telprov")
 @Data
-
 public class TelefonoProveedor {
-
-
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,5 +19,4 @@ public class TelefonoProveedor {
         @ManyToOne
         @JoinColumn(name = "Tbl_Proveedor_Id_Proveedor", nullable = false)
         private Proveedor proveedor;
-
 }

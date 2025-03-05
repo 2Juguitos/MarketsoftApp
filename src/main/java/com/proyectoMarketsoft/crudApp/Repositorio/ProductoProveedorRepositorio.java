@@ -1,8 +1,10 @@
-package com.proyectoMarketsoft.crudApp.Repositorio;  // <-- Agrega esto arriba
+package com.proyectoMarketsoft.crudApp.Repositorio;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import com.proyectoMarketsoft.crudApp.Modelo.ProductoProveedor;
-import com.proyectoMarketsoft.crudApp.Modelo.ProductoProveedorID;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ProductoProveedorRepositorio extends JpaRepository<ProductoProveedor, ProductoProveedorID> {
+@Repository
+public interface ProductoProveedorRepositorio extends JpaRepository<ProductoProveedor, Integer> {
+
 }

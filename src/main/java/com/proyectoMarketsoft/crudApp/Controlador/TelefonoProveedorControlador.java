@@ -1,17 +1,19 @@
 package com.proyectoMarketsoft.crudApp.Controlador;
+
 import com.proyectoMarketsoft.crudApp.Modelo.TelefonoProveedor;
 import com.proyectoMarketsoft.crudApp.Modelo.Proveedor;
 import com.proyectoMarketsoft.crudApp.Repositorio.TelefonoProveedorRepositorio;
 import com.proyectoMarketsoft.crudApp.Repositorio.ProveedorRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/telefonosprov")
+@Controller
+@RequestMapping("/telefonosprov")
 public class TelefonoProveedorControlador {
 
     @Autowired
@@ -20,75 +22,75 @@ public class TelefonoProveedorControlador {
     @Autowired
     private ProveedorRepositorio proveedorRepositorio;
 
-
-    @GetMapping
-    public List<TelefonoProveedor> getAllTelefonos() {
-        return telefonoProveedorRepositorio.findAll();
+    // Listar todos los teléfonos de proveedor
+    @GetMapping("/listar")
+    public String listarTelefonos(Model model) {
+        List<TelefonoProveedor> telefonos = telefonoProveedorRepositorio.findAll();
+        model.addAttribute("telefonos", telefonos);
+        return "tlfprov/lista"; // Ubicado en /WEB-INF/views/tlfprov/lista.jsp
     }
 
-
-    @GetMapping("/{id}")
-    public ResponseEntity<TelefonoProveedor> getTelefonoById(@PathVariable Integer id) {
-        return telefonoProveedorRepositorio.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    // Mostrar formulario para crear un nuevo teléfono de proveedor
+    @GetMapping("/nuevo")
+    public String mostrarFormularioNuevo(Model model) {
+        model.addAttribute("telefono", new TelefonoProveedor());
+        return "tlfprov/form"; // Ubicado en /WEB-INF/views/tlfprov/form.jsp
     }
 
-
-    @PostMapping
-    public ResponseEntity<TelefonoProveedor> createTelefono(@RequestBody TelefonoProveedor telProv) {
-        if (telProv.getProveedor() != null) {
-            Optional<Proveedor> proveedor = proveedorRepositorio.findById(telProv.getProveedor().getIdProveedor());
-            if (proveedor.isPresent()) {
-                telProv.setProveedor(proveedor.get());
-                TelefonoProveedor savedTelProv = telefonoProveedorRepositorio.save(telProv);
-                return ResponseEntity.status(201).body(savedTelProv);
+    // Procesar el formulario para guardar un nuevo teléfono
+    @PostMapping("/guardar")
+    public String guardarTelefono(@ModelAttribute("telefono") TelefonoProveedor telefono) {
+        // Validar que se haya enviado un proveedor y que su ID no sea 0
+        if (telefono.getProveedor() != null && telefono.getProveedor().getIdProveedor() != 0) {
+            Optional<Proveedor> proveedorOpt = proveedorRepositorio.findById(telefono.getProveedor().getIdProveedor());
+            if (proveedorOpt.isPresent()) {
+                telefono.setProveedor(proveedorOpt.get());
             } else {
-                return ResponseEntity.badRequest().body(null);
+                // Redirige con error si no existe el proveedor
+                return "redirect:/telefonosprov/nuevo?error=ProveedorNoExiste";
             }
-        }
-        return ResponseEntity.badRequest().body(null);
-    }
-
-
-    @PutMapping("/{id}")
-    public ResponseEntity<TelefonoProveedor> updateTelefono(@PathVariable Integer id, @RequestBody TelefonoProveedor telProvActualizado) {
-        Optional<TelefonoProveedor> telefonoExistente = telefonoProveedorRepositorio.findById(id);
-
-        if (telefonoExistente.isPresent()) {
-            TelefonoProveedor telefono = telefonoExistente.get();
-            telefono.setTelProv(telProvActualizado.getTelProv());
-
-            if (telProvActualizado.getProveedor() != null) {
-                Optional<Proveedor> proveedor = proveedorRepositorio.findById(telProvActualizado.getProveedor().getIdProveedor());
-                proveedor.ifPresent(telefono::setProveedor);
-            }
-
-            TelefonoProveedor telefonoActualizado = telefonoProveedorRepositorio.save(telefono);
-            return ResponseEntity.ok(telefonoActualizado);
         } else {
-            return ResponseEntity.notFound().build();
+            // Si no se asignó un proveedor válido, se redirige con error
+            return "redirect:/telefonosprov/nuevo?error=ProveedorNoAsignado";
         }
+        telefonoProveedorRepositorio.save(telefono);
+        return "redirect:/telefonosprov/listar";
     }
 
+    // Mostrar formulario para editar un teléfono existente
+    @GetMapping("/editar/{id}")
+    public String mostrarFormularioEditar(@PathVariable("id") Integer id, Model model) {
+        Optional<TelefonoProveedor> telefonoOpt = telefonoProveedorRepositorio.findById(id);
+        if (telefonoOpt.isPresent()) {
+            model.addAttribute("telefono", telefonoOpt.get());
+            return "tlfprov/form";
+        }
+        return "redirect:/telefonosprov/listar";
+    }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTelefono(@PathVariable Integer id) {
+    // Procesar la actualización (POST)
+    @PostMapping("/actualizar/{id}")
+    public String actualizarTelefono(@PathVariable("id") Integer id,
+                                     @ModelAttribute("telefono") TelefonoProveedor telefonoActualizado) {
+        Optional<TelefonoProveedor> telefonoOpt = telefonoProveedorRepositorio.findById(id);
+        if (telefonoOpt.isPresent()) {
+            TelefonoProveedor telefonoExistente = telefonoOpt.get();
+            telefonoExistente.setTelProv(telefonoActualizado.getTelProv());
+            if (telefonoActualizado.getProveedor() != null && telefonoActualizado.getProveedor().getIdProveedor() != 0) {
+                Optional<Proveedor> proveedorOpt = proveedorRepositorio.findById(telefonoActualizado.getProveedor().getIdProveedor());
+                proveedorOpt.ifPresent(telefonoExistente::setProveedor);
+            }
+            telefonoProveedorRepositorio.save(telefonoExistente);
+        }
+        return "redirect:/telefonosprov/listar";
+    }
+
+    // Eliminar un teléfono (GET)
+    @GetMapping("/eliminar/{id}")
+    public String eliminarTelefono(@PathVariable("id") Integer id) {
         if (telefonoProveedorRepositorio.existsById(id)) {
             telefonoProveedorRepositorio.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
         }
-    }
-
-
-    @GetMapping("/proveedor/{idProveedor}")
-    public ResponseEntity<List<TelefonoProveedor>> getTelefonosByProveedor(@PathVariable Integer idProveedor) {
-        List<TelefonoProveedor> telefonos = telefonoProveedorRepositorio.findByProveedor_IdProveedor(idProveedor);
-        if (telefonos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(telefonos);
+        return "redirect:/telefonosprov/listar";
     }
 }

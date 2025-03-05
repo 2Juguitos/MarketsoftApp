@@ -1,34 +1,30 @@
 package com.proyectoMarketsoft.crudApp.Modelo;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-import java.math.BigDecimal;
-
-@Entity
-@Table(name = "tbl_productoprov")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "tbl_productoprov")
 public class ProductoProveedor {
 
-    @EmbeddedId
-    private ProductoProveedorID id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-    @ManyToOne
-    @MapsId("productoId")
-    @JoinColumn(name = "Tbl_producto_ID_Producto", referencedColumnName = "ID_Producto")
-    private Producto producto;
+    @Column(name = "Tbl_producto_ID_Producto", nullable = false)
+    private Integer productoId;
 
-    @ManyToOne
-    @MapsId("proveedorId")
-    @JoinColumn(name = "Tbl_proveedor_ID_Proveedor", referencedColumnName = "Id_Proveedor")
-    private Proveedor proveedor;
+    @Column(name = "Tbl_proveedor_ID_Proveedor", nullable = false)
+    private Integer proveedorId;
 
     @Column(name = "TblProducto_Cantidad", nullable = false)
     private Integer cantidad;
 
     @Column(name = "TblProducto_Precio_unit", nullable = false)
-    private BigDecimal precioUnitario;
+    private Double precioUnitario;
 }

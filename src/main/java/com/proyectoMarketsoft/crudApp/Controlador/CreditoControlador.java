@@ -1,66 +1,93 @@
 package com.proyectoMarketsoft.crudApp.Controlador;
+
 import com.proyectoMarketsoft.crudApp.Modelo.Credito;
-import com.proyectoMarketsoft.crudApp.Repositorio.CreditoRepositorio;
 import com.proyectoMarketsoft.crudApp.Servicio.CreditoServicio;
+import com.proyectoMarketsoft.crudApp.Repositorio.CreditoRepositorio;
+import com.proyectoMarketsoft.crudApp.Repositorio.ClienteRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/credito")
+@Controller
+@RequestMapping("/credito")
 public class CreditoControlador {
 
     @Autowired
     private CreditoRepositorio creditoRepositorio;
 
+    @Autowired
+    private ClienteRepositorio clienteRepositorio;
 
     @Autowired
     private CreditoServicio creditoServicio;
 
-    @PostMapping
-    public ResponseEntity<Credito> crearCreditoConRegistro(@RequestBody Credito credito) {
-        Credito creditoCreado = creditoServicio.crearCreditoYRegistro(credito);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creditoCreado);
-    }
-
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Credito> obtenerCreditoPorId(@PathVariable Integer id) {
-        Optional<Credito> credito = creditoRepositorio.findById(id);
-        return credito.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-
-    @GetMapping
-    public ResponseEntity<List<Credito>> obtenerTodosLosCreditos() {
+    // Listar todos los créditos
+    @GetMapping("/lista")
+    public String listarCreditos(Model model) {
         List<Credito> creditos = creditoRepositorio.findAll();
-        return ResponseEntity.ok(creditos);
+        model.addAttribute("creditos", creditos);
+        return "credito/lista"; // Vista lista.jsp
     }
 
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Credito> actualizarCredito(@PathVariable Integer id,
-                                                     @RequestBody Credito credito) {
-        if (!creditoRepositorio.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        credito.setIdCredito(id);
-        Credito actualizado = creditoRepositorio.save(credito);
-        return ResponseEntity.ok(actualizado);
+    // Mostrar formulario para crear un nuevo crédito
+    @GetMapping("/form")
+    public String mostrarFormularioCredito(Model model) {
+        model.addAttribute("clientes", clienteRepositorio.findAll()); // Lista de clientes para seleccionar
+        model.addAttribute("credito", new Credito());
+        return "credito/form"; // Vista form.jsp
     }
 
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarCredito(@PathVariable Integer id) {
-        if (!creditoRepositorio.existsById(id)) {
-            return ResponseEntity.notFound().build();
+    // Guardar un nuevo crédito
+    @PostMapping("/guardar")
+    public String guardarCredito(@ModelAttribute Credito credito, Model model) {
+        try {
+            // Crear el crédito y su correspondiente registro
+            creditoServicio.crearCreditoYRegistro(credito);
+            return "redirect:/credito/lista";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("clientes", clienteRepositorio.findAll());
+            return "credito/form";
         }
-        creditoRepositorio.deleteById(id);
-        return ResponseEntity.noContent().build();
+    }
+
+    // Mostrar un crédito por ID
+    @GetMapping("/ver/{id}")
+    public String verCredito(@PathVariable Integer id, Model model) {
+        Optional<Credito> credito = creditoRepositorio.findById(id);
+        if (credito.isPresent()) {
+            model.addAttribute("credito", credito.get());
+            return "credito/ver"; // Vista ver.jsp si es necesaria
+        } else {
+            model.addAttribute("error", "Crédito no encontrado.");
+            return "redirect:/credito/lista";
+        }
+    }
+
+    // Mostrar el formulario para editar un crédito existente
+    @GetMapping("/editar/{id}")
+    public String mostrarFormularioEditar(@PathVariable Integer id, Model model) {
+        Optional<Credito> credito = creditoRepositorio.findById(id);
+        if (credito.isPresent()) {
+            model.addAttribute("credito", credito.get());
+            model.addAttribute("clientes", clienteRepositorio.findAll());
+            return "credito/form"; // Reutiliza el formulario para edición
+        } else {
+            model.addAttribute("error", "Crédito no encontrado.");
+            return "redirect:/credito/lista";
+        }
+    }
+
+    // Eliminar un crédito por ID
+    @GetMapping("/eliminar/{id}")
+    public String eliminarCredito(@PathVariable Integer id) {
+        if (creditoRepositorio.existsById(id)) {
+            creditoRepositorio.deleteById(id);
+        }
+        return "redirect:/credito/lista";
     }
 }

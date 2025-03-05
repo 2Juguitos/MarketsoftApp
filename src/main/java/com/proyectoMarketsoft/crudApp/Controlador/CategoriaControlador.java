@@ -3,60 +3,67 @@ package com.proyectoMarketsoft.crudApp.Controlador;
 import com.proyectoMarketsoft.crudApp.Modelo.Categoria;
 import com.proyectoMarketsoft.crudApp.Repositorio.CategoriaRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/categorias")
+@Controller
+@RequestMapping("/categorias")
 public class CategoriaControlador {
 
     @Autowired
     private CategoriaRepositorio categoriaRepositorio;
 
-
-    @GetMapping
-    public List<Categoria> getAllCategorias() {
-        return categoriaRepositorio.findAll();
+    // Mostrar lista de categorías en una página JSP
+    @GetMapping("/listar")
+    public String listarCategorias(Model model) {
+        List<Categoria> categorias = categoriaRepositorio.findAll();
+        model.addAttribute("categorias", categorias);
+        return "categoria/lista"; // Busca /WEB-INF/views/categoria/lista.jsp
     }
 
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Categoria> getCategoriaById(@PathVariable Integer id) {
-        Optional<Categoria> categoria = categoriaRepositorio.findById(id);
-        return categoria.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    // Mostrar formulario para crear una nueva categoría
+    @GetMapping("/nuevo")
+    public String mostrarFormularioNuevo(Model model) {
+        model.addAttribute("categoria", new Categoria());
+        return "categoria/form"; // Busca /WEB-INF/views/categoria/form.jsp
     }
 
-
-    @PostMapping
-    public ResponseEntity<Categoria> createCategoria(@RequestBody Categoria categoria) {
-        Categoria nuevaCategoria = categoriaRepositorio.save(categoria);
-        return ResponseEntity.status(201).body(nuevaCategoria);
+    // Procesar el formulario de creación (POST)
+    @PostMapping("/guardar")
+    public String guardarCategoria(@ModelAttribute("categoria") Categoria categoria) {
+        categoriaRepositorio.save(categoria);
+        return "redirect:/categorias/listar";
     }
 
+    // Mostrar formulario para editar una categoría existente
+    @GetMapping("/editar/{id}")
+    public String mostrarFormularioEditar(@PathVariable Integer id, Model model) {
+        Categoria categoria = categoriaRepositorio.findById(id).orElse(null);
+        model.addAttribute("categoria", categoria);
+        return "categoria/form"; // Reutiliza el mismo formulario
+    }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Categoria> updateCategoria(@PathVariable Integer id, @RequestBody Categoria categoriaActualizada) {
-        if (categoriaRepositorio.existsById(id)) {
-            categoriaActualizada.setIdCategoria(id);
-            Categoria categoriaGuardada = categoriaRepositorio.save(categoriaActualizada);
-            return ResponseEntity.ok(categoriaGuardada);
-        } else {
-            return ResponseEntity.notFound().build();
+    // Procesar la actualización (POST)
+    @PostMapping("/actualizar/{id}")
+    public String actualizarCategoria(@PathVariable Integer id, @ModelAttribute("categoria") Categoria categoriaActualizada) {
+        Categoria categoriaExistente = categoriaRepositorio.findById(id).orElse(null);
+        if (categoriaExistente != null) {
+            categoriaExistente.setNombreCategoria(categoriaActualizada.getNombreCategoria());
+            categoriaExistente.setFechaRegistroCategoria(categoriaActualizada.getFechaRegistroCategoria());
+            categoriaRepositorio.save(categoriaExistente);
         }
+        return "redirect:/categorias/listar";
     }
 
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategoria(@PathVariable Integer id) {
+    // Eliminar una categoría (GET)
+    @GetMapping("/eliminar/{id}")
+    public String eliminarCategoria(@PathVariable Integer id) {
         if (categoriaRepositorio.existsById(id)) {
             categoriaRepositorio.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        return "redirect:/categorias/listar";
     }
 }

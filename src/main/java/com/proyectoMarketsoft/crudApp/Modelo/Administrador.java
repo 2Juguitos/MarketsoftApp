@@ -1,8 +1,6 @@
 package com.proyectoMarketsoft.crudApp.Modelo;
-
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,6 +22,8 @@ public class Administrador {
         @Column(name = "Nombre_Admin", nullable = false, length = 45)
         private String nombreAdmin;
 
+        @OneToMany(mappedBy =  "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
+        private List<Proveedor> proveedor;
 
         @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
         private List<Producto> productos;

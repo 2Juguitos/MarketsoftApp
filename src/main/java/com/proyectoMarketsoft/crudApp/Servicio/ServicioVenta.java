@@ -25,11 +25,14 @@ public class ServicioVenta {
      * Crea una venta calculando el precioVenta a partir de los detalles.
      * Para cada ProductoVenta se obtiene el precio unitario desde Inventario
      * y se calcula el subtotal (precioUnitario * cantidad) que se suma para obtener el precioVenta.
+     *
+     *
      */
+
+
     @Transactional
     public Venta crearVenta(Venta venta) {
         BigDecimal totalVenta = BigDecimal.ZERO;
-
         if (venta.getProductoVenta() != null) {
             for (ProductoVenta detalle : venta.getProductoVenta()) {
                 // Se obtiene el ID del producto asociado en el detalle
@@ -47,20 +50,68 @@ public class ServicioVenta {
                 detalle.setVenta(venta);
             }
         }
-
-        // Asigna el total calculado al precioVenta de la venta
         venta.setPrecioVenta(totalVenta);
-
-        // Persiste la venta (con cascade en ProductoVenta se guardan también los detalles)
         return ventaRepositorio.save(venta);
     }
 
+    /**
+     * Obtiene una venta por ID.
+     */
     public Optional<Venta> getVentaById(Integer id) {
         return ventaRepositorio.findById(id);
     }
 
+    /**
+     * Obtiene todas las ventas.
+     */
     public List<Venta> getAllVentas() {
         return ventaRepositorio.findAll();
     }
-}
 
+    /**
+     * Actualiza una venta existente.
+     * Se actualizan los campos principales y se recalcula el precioVenta a partir de la lista de ProductoVenta.
+     */
+    @Transactional
+    public Venta actualizarVenta(Integer id, Venta ventaActualizada) {
+        return ventaRepositorio.findById(id).map(ventaExistente -> {
+            // Actualizamos campos simples
+            ventaExistente.setDescuento(ventaActualizada.getDescuento());
+            ventaExistente.setFechaVenta(ventaActualizada.getFechaVenta());
+            ventaExistente.setCliente(ventaActualizada.getCliente());
+            ventaExistente.setAdministrador(ventaActualizada.getAdministrador());
+
+            // Actualizamos la lista de detalles y reemplazamos la lista existente
+            if (ventaActualizada.getProductoVenta() != null) {
+                ventaExistente.getProductoVenta().clear();
+                BigDecimal totalVenta = BigDecimal.ZERO;
+                for (ProductoVenta detalle : ventaActualizada.getProductoVenta()) {
+                    Integer idProducto = detalle.getProducto().getIdProducto();
+                    BigDecimal precioUnitarioCalculado = inventarioRepository.sumarPreciosPorProducto(idProducto);
+                    detalle.setPrecioUnitario(precioUnitarioCalculado);
+                    int cantidad = detalle.getCantidad() != null ? detalle.getCantidad() : 0;
+                    BigDecimal subtotal = precioUnitarioCalculado.multiply(new BigDecimal(cantidad));
+                    totalVenta = totalVenta.add(subtotal);
+                    // Asigna la venta existente al detalle
+                    detalle.setVenta(ventaExistente);
+                    ventaExistente.getProductoVenta().add(detalle);
+                }
+                ventaExistente.setPrecioVenta(totalVenta);
+            }
+            return ventaRepositorio.save(ventaExistente);
+        }).orElse(null);
+    }
+
+    /**
+     * Elimina una venta existente.
+     */
+    @Transactional
+    public boolean eliminarVenta(Integer id) {
+        Optional<Venta> ventaOpt = ventaRepositorio.findById(id);
+        if (ventaOpt.isPresent()) {
+            ventaRepositorio.delete(ventaOpt.get());
+            return true;
+        }
+        return false;
+    }
+}

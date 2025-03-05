@@ -1,63 +1,79 @@
-
 package com.proyectoMarketsoft.crudApp.Controlador;
 
 import com.proyectoMarketsoft.crudApp.Modelo.Cliente;
 import com.proyectoMarketsoft.crudApp.Repositorio.ClienteRepositorio;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/clientes")
+@Controller
+@RequestMapping("/clientes")
 public class ClienteControlador {
 
     private final ClienteRepositorio clienteRepositorio;
 
+    @Autowired
     public ClienteControlador(ClienteRepositorio clienteRepositorio) {
         this.clienteRepositorio = clienteRepositorio;
     }
 
-
-    @GetMapping
-    public List<Cliente> listarClientes() {
-        return clienteRepositorio.findAll();
+    // Mostrar la lista de clientes
+    @GetMapping("/listar")
+    public String listarClientes(Model model) {
+        List<Cliente> clientes = clienteRepositorio.findAll();
+        model.addAttribute("clientes", clientes);
+        return "cliente/lista";  // Busca el JSP en /WEB-INF/views/cliente/lista.jsp
     }
 
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Cliente> obtenerClientePorId(@PathVariable Integer id) {
-        Optional<Cliente> cliente = clienteRepositorio.findById(id);
-        return cliente.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    // Mostrar formulario para crear un nuevo cliente
+    @GetMapping("/nuevo")
+    public String mostrarFormularioNuevo(Model model) {
+        model.addAttribute("cliente", new Cliente());
+        return "cliente/form"; // Busca /WEB-INF/views/cliente/form.jsp
     }
 
-
-    @PostMapping
-    public Cliente guardarCliente(@RequestBody Cliente cliente) {
-        return clienteRepositorio.save(cliente);
+    // Procesar el formulario de creación (POST)
+    @PostMapping("/guardar")
+    public String guardarCliente(@ModelAttribute("cliente") Cliente cliente) {
+        clienteRepositorio.save(cliente);
+        return "redirect:/clientes/listar";
     }
 
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Cliente> actualizarCliente(@PathVariable Integer id, @RequestBody Cliente clienteActualizado) {
-        return clienteRepositorio.findById(id)
-                .map(cliente -> {
-                    cliente.setNombreCliente(clienteActualizado.getNombreCliente());
-                    cliente.setApellidoCliente(clienteActualizado.getApellidoCliente());
-                    cliente.setAdministrador(clienteActualizado.getAdministrador());
-                    return ResponseEntity.ok(clienteRepositorio.save(cliente));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    // Mostrar formulario para editar un cliente existente
+    @GetMapping("/editar/{id}")
+    public String mostrarFormularioEditar(@PathVariable Integer id, Model model) {
+        Optional<Cliente> clienteOpt = clienteRepositorio.findById(id);
+        if (clienteOpt.isPresent()) {
+            model.addAttribute("cliente", clienteOpt.get());
+            return "cliente/form";
+        }
+        return "redirect:/clientes/listar";
     }
 
+    // Procesar la actualización (POST)
+    @PostMapping("/actualizar/{id}")
+    public String actualizarCliente(@PathVariable Integer id, @ModelAttribute("cliente") Cliente clienteActualizado) {
+        Optional<Cliente> clienteOpt = clienteRepositorio.findById(id);
+        if (clienteOpt.isPresent()){
+            Cliente clienteExistente = clienteOpt.get();
+            clienteExistente.setNombreCliente(clienteActualizado.getNombreCliente());
+            clienteExistente.setApellidoCliente(clienteActualizado.getApellidoCliente());
+            clienteExistente.setAdministrador(clienteActualizado.getAdministrador());
+            clienteRepositorio.save(clienteExistente);
+        }
+        return "redirect:/clientes/listar";
+    }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarCliente(@PathVariable Integer id) {
+    // Eliminar un cliente (GET)
+    @GetMapping("/eliminar/{id}")
+    public String eliminarCliente(@PathVariable Integer id) {
         if (clienteRepositorio.existsById(id)) {
             clienteRepositorio.deleteById(id);
-            return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.notFound().build();
+        return "redirect:/clientes/listar";
     }
 }

@@ -24,16 +24,29 @@ public class Producto {
     @Column(name = "Nombre_Prod", nullable = false)
     private String nombreProd;
 
-
-    @OneToMany(mappedBy = "producto")
+    /** Relación con Inventarios **/
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Inventario> inventarios;
 
-    @ManyToOne
+    /** Relación con Administrador **/
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Tbl_Administrador_ID_Admin", nullable = false)
+    @JsonIgnore // Evita serialización infinita
     private Administrador administrador;
 
-    @ManyToOne
+    /** Relación con Categoría **/
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tbl_Categoria_idtbl_Categoria", nullable = false)
+    @JsonIgnore // Evita serialización infinita
     private Categoria categoria;
+
+    @Override
+    public String toString() {
+        return "Producto{" +
+                "idProducto=" + idProducto +
+                ", marcaProd='" + marcaProd + '\'' +
+                ", nombreProd='" + nombreProd + '\'' +
+                '}';
+    }
 }

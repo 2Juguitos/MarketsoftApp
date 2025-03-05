@@ -1,8 +1,8 @@
 package com.proyectoMarketsoft.crudApp.Modelo;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -30,6 +30,7 @@ public class Inventario {
 
     @Column(name = "Fecha_Registro")
     @Temporal(TemporalType.DATE)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date fechaRegistro;
 
     @Column(name = "Producto_Disponible")
