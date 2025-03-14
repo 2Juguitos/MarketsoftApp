@@ -1,8 +1,6 @@
 package com.proyectoMarketsoft.crudApp.Modelo;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,6 +9,7 @@ import java.util.List;
 @Entity(name = "Administrador")
 @Table(name = "tbl_administrador")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "idAdmin")
@@ -26,12 +25,18 @@ public class Administrador {
 
 
         @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
+        @JsonIgnore
         private List<Producto> productos;
 
         @OneToMany(mappedBy = "administrador", cascade = CascadeType.ALL, orphanRemoval = true)
+        @JsonIgnore
         private List<Cliente> clientes;
 
+        @OneToMany(mappedBy ="administrador", cascade = CascadeType.ALL,orphanRemoval = true)
+        @JsonIgnore
+        private List<Venta> ventas;
 
         @OneToMany(mappedBy = "administrador")
+        @JsonBackReference
         private List<Inventario> inventarios;
 }

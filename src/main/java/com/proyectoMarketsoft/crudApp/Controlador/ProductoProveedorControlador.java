@@ -7,9 +7,9 @@ import com.proyectoMarketsoft.crudApp.Modelo.ProductoProveedorID;
 import com.proyectoMarketsoft.crudApp.Repositorio.ProductoProveedorRepositorio;
 import java.util.List;
 import java.util.Optional;
-
+@CrossOrigin("*")
 @RestController
-@RequestMapping("/producto_proveedor")
+@RequestMapping("/api/producto_proveedor")
 public class ProductoProveedorControlador {
 
     @Autowired

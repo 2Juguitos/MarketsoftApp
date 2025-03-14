@@ -1,9 +1,12 @@
 package com.proyectoMarketsoft.crudApp.Servicio;
 
-import com.proyectoMarketsoft.crudApp.Modelo.ProductoVenta;
+import com.proyectoMarketsoft.crudApp.DTO.request.VentaRequestDTO;
+import com.proyectoMarketsoft.crudApp.DTO.response.VentaResponseDTO;
+import com.proyectoMarketsoft.crudApp.Mapper.VentaMapper;
 import com.proyectoMarketsoft.crudApp.Modelo.Venta;
-import com.proyectoMarketsoft.crudApp.Repositorio.InventarioRepositorio;
+import com.proyectoMarketsoft.crudApp.Modelo.ProductoVenta;
 import com.proyectoMarketsoft.crudApp.Repositorio.VentaRepositorio;
+import com.proyectoMarketsoft.crudApp.Repositorio.InventarioRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ServicioVenta {
@@ -21,46 +25,64 @@ public class ServicioVenta {
     @Autowired
     private InventarioRepositorio inventarioRepository;
 
+    @Autowired
+    private VentaMapper ventaMapper;
+
     /**
-     * Crea una venta calculando el precioVenta a partir de los detalles.
-     * Para cada ProductoVenta se obtiene el precio unitario desde Inventario
-     * y se calcula el subtotal (precioUnitario * cantidad) que se suma para obtener el precioVenta.
+     * Crea una venta a partir de un VentaRequestDTO.
+     * Calcula el precioVenta utilizando el precio unitario desde Inventario.
      */
     @Transactional
-    public Venta crearVenta(Venta venta) {
+    public VentaResponseDTO crearVenta(VentaRequestDTO ventaRequestDTO) {
+        Venta venta = ventaMapper.toEntity(ventaRequestDTO); // Convertimos el DTO a Entidad
         BigDecimal totalVenta = BigDecimal.ZERO;
 
-        if (venta.getProductoVenta() != null) {
-            for (ProductoVenta detalle : venta.getProductoVenta()) {
-                // Se obtiene el ID del producto asociado en el detalle
+        if (venta.getProductoVentas() != null) {
+            for (ProductoVenta detalle : venta.getProductoVentas()) {
                 Integer idProducto = detalle.getProducto().getIdProducto();
-                // Se consulta el precio unitario calculado a partir de Inventario
                 BigDecimal precioUnitarioCalculado = inventarioRepository.sumarPreciosPorProducto(idProducto);
-                // Asigna el precio unitario obtenido al detalle
+
                 detalle.setPrecioUnitario(precioUnitarioCalculado);
-                // Calcula el subtotal para el detalle
+
                 int cantidad = detalle.getCantidad() != null ? detalle.getCantidad() : 0;
                 BigDecimal subtotal = precioUnitarioCalculado.multiply(new BigDecimal(cantidad));
-                // Suma al total de la venta
                 totalVenta = totalVenta.add(subtotal);
-                // Asigna la referencia de venta al detalle
+
                 detalle.setVenta(venta);
             }
         }
 
-        // Asigna el total calculado al precioVenta de la venta
         venta.setPrecioVenta(totalVenta);
 
-        // Persiste la venta (con cascade en ProductoVenta se guardan también los detalles)
-        return ventaRepositorio.save(venta);
+        Venta ventaGuardada = ventaRepositorio.save(venta);
+        return ventaMapper.toDTO(ventaGuardada); // Convertimos la Entidad a DTO para la respuesta
     }
 
-    public Optional<Venta> getVentaById(Integer id) {
-        return ventaRepositorio.findById(id);
+    /**
+     * Obtiene una venta por su ID y la convierte a VentaResponseDTO.
+     */
+    public Optional<VentaResponseDTO> getVentaById(Integer id) {
+        return ventaRepositorio.findById(id).map(ventaMapper::toDTO);
     }
 
-    public List<Venta> getAllVentas() {
-        return ventaRepositorio.findAll();
+    /**
+     * Obtiene todas las ventas y las convierte a una lista de VentaResponseDTO.
+     */
+    public List<VentaResponseDTO> getAllVentas() {
+        return ventaRepositorio.findAll()
+                .stream()
+                .map(ventaMapper::toDTO)
+                .collect(Collectors.toList());
     }
+
+    @Transactional
+    public void eliminarVenta(Integer id) {
+        if (ventaRepositorio.existsById(id)) {
+            // La eliminación en cascada se encarga de borrar los ProductoVenta asociados.
+            ventaRepositorio.deleteById(id);
+        } else {
+            throw new RuntimeException("Venta no encontrada");
+        }
+}
 }
 

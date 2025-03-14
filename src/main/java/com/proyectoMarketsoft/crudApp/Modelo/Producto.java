@@ -5,12 +5,14 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
-
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity(name = "Producto")
 @Table(name = "tbl_producto")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class Producto {
 
     @Id
@@ -26,8 +28,9 @@ public class Producto {
 
 
     @OneToMany(mappedBy = "producto")
-    @JsonIgnore
+    @JsonBackReference
     private List<Inventario> inventarios;
+
 
     @ManyToOne
     @JoinColumn(name = "Tbl_Administrador_ID_Admin", nullable = false)
