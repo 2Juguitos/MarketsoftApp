@@ -1,10 +1,11 @@
 package com.proyectoMarketsoft.crudApp.Repositorio;
-import org.springframework.data.jpa.repository.JpaRepository;
+
 import com.proyectoMarketsoft.crudApp.Modelo.Administrador;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
 
-
-@Repository
 public interface AdministradorRepositorio extends JpaRepository<Administrador, Integer> {
+    Optional<Administrador> findByUsername(String username);
 }
+
 

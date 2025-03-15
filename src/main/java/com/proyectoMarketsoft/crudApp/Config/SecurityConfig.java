@@ -1,7 +1,9 @@
 package com.proyectoMarketsoft.crudApp.Config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -12,7 +14,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Configuration
 @EnableWebSecurity
@@ -26,18 +27,22 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()  // Permitir login y registro
-                        .requestMatchers("/api/productos/**", "/api/categorias/**", "/api/ventas").permitAll()  // Permitir GET de ventas
-                        .requestMatchers("/api/creditos").authenticated()  // Protegido
-                        .requestMatchers("/api/ventas").authenticated()  // Protege POST, pero debemos verificar el cliente
+                        .requestMatchers("/api/auth/**").permitAll()  // Login y registro públicos
+                        .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll() // Visualización de productos es pública
+                        // Por ejemplo, para ventas: la visualización (GET) es pública
+                        .requestMatchers(HttpMethod.GET, "/api/ventas/**").permitAll()
+                        // Para crear o modificar ventas, inventarios y proveedores se requiere autenticación
+                        .requestMatchers(HttpMethod.POST, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .authenticationProvider(authProvider)
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
-
         return http.build();
     }
+
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {

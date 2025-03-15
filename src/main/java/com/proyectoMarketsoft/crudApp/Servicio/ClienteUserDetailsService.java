@@ -3,11 +3,12 @@ import com.proyectoMarketsoft.crudApp.Modelo.Cliente;
 import com.proyectoMarketsoft.crudApp.Repositorio.ClienteRepositorio;
 import com.proyectoMarketsoft.crudApp.Servicio.ClienteUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
+@Primary
 @Service
 public class ClienteUserDetailsService implements UserDetailsService {
 

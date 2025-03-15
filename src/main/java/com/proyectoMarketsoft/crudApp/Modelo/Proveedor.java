@@ -34,6 +34,7 @@ import lombok.NonNull;
 
 
         @ManyToOne(fetch = FetchType.LAZY)
+        @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
         @JoinColumn(name = "Tbl_Administrador_ID_Admin", referencedColumnName = "ID_Admin", nullable = false)
         private Administrador administrador;
 
