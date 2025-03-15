@@ -37,7 +37,7 @@ public class Inventario {
     @Column(name = "Producto_Disponible")
     private Boolean productoDisponible;
 
-    // Cambiamos @JsonBackReference por @JsonIdentityReference(alwaysAsId = true)
+
     @ManyToOne
     @JoinColumn(name = "Tbl_Producto_ID_Producto", nullable = false)
 

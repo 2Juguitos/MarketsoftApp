@@ -9,6 +9,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,25 +24,37 @@ public class SecurityConfig {
     private JWTRequestfilter jwtRequestFilter;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, DaoAuthenticationProvider authProvider) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // Desactivar CSRF para Postman
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()  // Login y registro públicos
-                        .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll() // Visualización de productos es pública
-                        // Por ejemplo, para ventas: la visualización (GET) es pública
-                        .requestMatchers(HttpMethod.GET, "/api/ventas/**").permitAll()
-                        // Para crear o modificar ventas, inventarios y proveedores se requiere autenticación
-                        .requestMatchers(HttpMethod.POST, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated()
-                        .anyRequest().permitAll()
+                        .anyRequest().permitAll() // Permitir TODO sin autenticación
                 )
-                .authenticationProvider(authProvider)
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable);
 
         return http.build();
     }
+
+    // @Bean
+// public SecurityFilterChain securityFilterChain(HttpSecurity http, DaoAuthenticationProvider authProvider) throws Exception {
+//     http
+//             .csrf(csrf -> csrf.disable())
+//             .authorizeHttpRequests(authorize -> authorize
+//                     .requestMatchers("/api/auth/**").permitAll()  // Login y registro públicos
+//                     .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll() // Visualización de productos es pública
+//                     .requestMatchers(HttpMethod.GET, "/api/ventas/**").permitAll() // Visualización de ventas es pública
+//                     .requestMatchers(HttpMethod.POST, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated() // Requiere autenticación para creación
+//                     .requestMatchers(HttpMethod.PUT, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated() // Requiere autenticación para modificaciones
+//                     .requestMatchers(HttpMethod.DELETE, "/api/ventas/**", "/api/inventarios/**", "/api/proveedores/**").authenticated() // Requiere autenticación para eliminación
+//                     .anyRequest().permitAll() // Permite acceso sin restricciones a cualquier otra solicitud
+//             )
+//             .authenticationProvider(authProvider)
+//             .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
+//     return http.build();
+// }
+
 
 
     @Bean

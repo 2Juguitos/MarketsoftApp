@@ -31,12 +31,12 @@ public class ProductoVenta {
     @Column(name = "Cantidad")
     private Integer cantidad;
 
-    // Relación con Producto (no se modifica aquí, pero si causa recursión podrías aplicar @JsonIdentityReference o @JsonIgnore)
+
     @ManyToOne
     @JoinColumn(name = "ID_Producto", nullable = false)
     private Producto producto;
 
-    // Relación con Venta: usamos @JsonBackReference para evitar recursión infinita
+
     @ManyToOne
     @JoinColumn(name = "ID_Venta", nullable = false)
     private Venta venta;

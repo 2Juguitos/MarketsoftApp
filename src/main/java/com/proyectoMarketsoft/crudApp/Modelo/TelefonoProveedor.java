@@ -17,7 +17,7 @@ public class TelefonoProveedor {
         private Integer idTelprov;
 
         @Column(name = "Tel_Prov", nullable = false)
-        private Integer telProv;
+        private Long telProv;
 
         @ManyToOne
         @JoinColumn(name = "Tbl_Proveedor_Id_Proveedor", nullable = false)
